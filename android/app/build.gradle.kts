@@ -100,11 +100,10 @@ dependencies {
     // PDF Viewer (using PdfRenderer native)
     implementation("androidx.graphics:graphics-core:1.0.0-alpha03")
 
-    // Supabase
-    implementation("io.github.jan-tennert:supabase-kt:1.4.0")
+    // Ktor Client
     implementation("io.ktor:ktor-client-android:2.3.0")
-    implementation("io.github.jan-tennert:postgrest-kt:1.4.0")
-    implementation("io.github.jan-tennert:storage-kt:1.4.0")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.0")
 
     // OneSignal
     implementation("com.onesignal:OneSignal:5.0.0")
