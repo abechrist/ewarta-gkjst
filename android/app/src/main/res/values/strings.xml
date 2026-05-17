@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">eWARTA</string>
+    <string name="beranda">Beranda</string>
+    <string name="jadwal">Jadwal</string>
+    <string name="pengumuman">Pengumuman</string>
+    <string name="doa">Doa &amp; Bacaan</string>
+    <string name="lainnya">Lainnya</string>
+</resources>
