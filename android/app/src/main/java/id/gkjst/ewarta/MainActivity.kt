@@ -18,11 +18,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.onesignal.OneSignal
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        OneSignal.initWithContext(this)
+        OneSignal.setAppId("your_onesignal_app_id")
+        
         setContent {
             eWARTATheme {
                 MainApp()
