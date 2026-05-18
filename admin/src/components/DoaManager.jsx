@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { apiService } from '@/apiService';
 
 export default function DoaManager() {
   const [doa, setDoa] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [activeTab, setActiveTab] = useState('doa');
   const [formData, setFormData] = useState({
     isi: '',
     kategori: 'jemaat',
-    periodeMulai: '',
-    periodeSelesai: '',
+    periode_mulai: '',
+    periode_selesai: '',
   });
 
   useEffect(() => {
@@ -22,8 +20,8 @@ export default function DoaManager() {
   const loadDoa = async () => {
     setLoading(true);
     try {
-      const snapshot = await getDocs(collection(db, 'doa_pokok'));
-      setDoa(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = await apiService.getDoaPokok();
+      setDoa(data);
     } catch (error) {
       console.error('Error loading doa:', error);
       alert('Error loading doa');
@@ -45,25 +43,19 @@ export default function DoaManager() {
     setLoading(true);
 
     try {
-      const doaData = {
-        ...formData,
-        periodeMulai: Timestamp.fromDate(new Date(formData.periodeMulai)),
-        periodeSelesai: Timestamp.fromDate(new Date(formData.periodeSelesai)),
-      };
-
       if (editingId) {
-        await updateDoc(doc(db, 'doa_pokok', editingId), doaData);
+        await apiService.updateDoaPokok(editingId, formData);
         alert('Doa updated successfully');
       } else {
-        await addDoc(collection(db, 'doa_pokok'), doaData);
+        await apiService.createDoaPokok(formData);
         alert('Doa created successfully');
       }
 
       setFormData({
         isi: '',
         kategori: 'jemaat',
-        periodeMulai: '',
-        periodeSelesai: '',
+        periode_mulai: '',
+        periode_selesai: '',
       });
       setEditingId(null);
       setShowForm(false);
@@ -79,7 +71,7 @@ export default function DoaManager() {
   const handleDelete = async (id) => {
     if (confirm('Hapus doa ini?')) {
       try {
-        await deleteDoc(doc(db, 'doa_pokok', id));
+        await apiService.deleteDoaPokok(id);
         loadDoa();
       } catch (error) {
         console.error('Error deleting doa:', error);
@@ -92,8 +84,8 @@ export default function DoaManager() {
     setFormData({
       isi: item.isi,
       kategori: item.kategori,
-      periodeMulai: item.periodeMulai?.toDate?.().toISOString().split('T')[0] || '',
-      periodeSelesai: item.periodeSelesai?.toDate?.().toISOString().split('T')[0] || '',
+      periode_mulai: item.periode_mulai || '',
+      periode_selesai: item.periode_selesai || '',
     });
     setEditingId(item.id);
     setShowForm(true);
@@ -102,7 +94,7 @@ export default function DoaManager() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-navy">Pokok Doa</h2>
+        <h2 className="text-2xl font-bold text-navy">Doa Pokok & Bacaan Harian</h2>
         <button
           onClick={() => {
             setShowForm(!showForm);
@@ -110,8 +102,8 @@ export default function DoaManager() {
             setFormData({
               isi: '',
               kategori: 'jemaat',
-              periodeMulai: '',
-              periodeSelesai: '',
+              periode_mulai: '',
+              periode_selesai: '',
             });
           }}
           className="bg-navy hover:bg-navy/90 text-white px-4 py-2 rounded-lg font-semibold transition"
@@ -123,51 +115,50 @@ export default function DoaManager() {
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-warmCream p-6 rounded-lg mb-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-navy mb-2">Pokok Doa</label>
+            <label className="block text-sm font-medium text-navy mb-2">Isi Doa</label>
             <textarea
               name="isi"
               value={formData.isi}
               onChange={handleInputChange}
-              rows="4"
+              rows="6"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-navy mb-2">Kategori</label>
-              <select
-                name="kategori"
-                value={formData.kategori}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
-              >
-                <option value="bangsa">Bangsa</option>
-                <option value="jemaat">Jemaat</option>
-                <option value="gereja">Gereja</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-navy mb-2">Kategori</label>
+            <select
+              name="kategori"
+              value={formData.kategori}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
+            >
+              <option value="jemaat">Doa Jemaat</option>
+              <option value="pemimpin">Doa Pemimpin</option>
+              <option value="bacaan">Bacaan Harian</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-navy mb-2">Periode Mulai</label>
               <input
                 type="date"
-                name="periodeMulai"
-                value={formData.periodeMulai}
+                name="periode_mulai"
+                value={formData.periode_mulai}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
-                required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-navy mb-2">Periode Selesai</label>
               <input
                 type="date"
-                name="periodeSelesai"
-                value={formData.periodeSelesai}
+                name="periode_selesai"
+                value={formData.periode_selesai}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
-                required
               />
             </div>
           </div>
@@ -185,16 +176,18 @@ export default function DoaManager() {
       <div className="space-y-4">
         {loading && <p className="text-center text-navy">Loading...</p>}
         {doa.map(item => (
-          <div key={item.id} className="bg-warmCream p-4 rounded-lg border-l-4 border-terracotta">
+          <div key={item.id} className="bg-warmCream p-4 rounded-lg border-l-4 border-navy">
             <div className="flex justify-between items-start mb-2">
               <div className="flex-1">
                 <p className="text-sm text-terracotta font-semibold capitalize mb-2">{item.kategori}</p>
-                <p className="text-gray-700 mb-2">{item.isi}</p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mb-3">
-              Periode: {item.periodeMulai?.toDate?.().toLocaleDateString('id-ID')} - {item.periodeSelesai?.toDate?.().toLocaleDateString('id-ID')}
-            </p>
+            <p className="text-sm text-gray-600 mb-3 line-clamp-3">{item.isi}</p>
+            {(item.periode_mulai || item.periode_selesai) && (
+              <p className="text-xs text-gray-500 mb-3">
+                Periode: {item.periode_mulai} - {item.periode_selesai}
+              </p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => handleEdit(item)}

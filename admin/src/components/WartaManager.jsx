@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage, messaging } from '@/firebase';
-import { getToken } from 'firebase/messaging';
+import { apiService } from '@/apiService';
 
 export default function WartaManager() {
   const [warta, setWarta] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [pdfFile, setPdfFile] = useState(null);
   const [formData, setFormData] = useState({
     tema: '',
     ayat: '',
     renungan: '',
-    mingguLiturgi: '',
-    warnaLiturgi: '',
+    minggu_liturgi: '',
+    warna_liturgi: '',
     published: false,
   });
 
@@ -26,9 +22,8 @@ export default function WartaManager() {
   const loadWarta = async () => {
     setLoading(true);
     try {
-      const q = query(collection(db, 'warta'));
-      const snapshot = await getDocs(q);
-      setWarta(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = await apiService.getWarta();
+      setWarta(data);
     } catch (error) {
       console.error('Error loading warta:', error);
       alert('Error loading warta');
@@ -45,52 +40,27 @@ export default function WartaManager() {
     }));
   };
 
-  const handlePdfChange = (e) => {
-    setPdfFile(e.target.files[0]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let pdfUrl = '';
-
-      if (pdfFile) {
-        const pdfRef = ref(storage, `warta/${Date.now()}_${pdfFile.name}`);
-        await uploadBytes(pdfRef, pdfFile);
-        pdfUrl = await getDownloadURL(pdfRef);
-      }
-
-      const wartaData = {
-        ...formData,
-        tanggal: Timestamp.now(),
-        pdfUrl: pdfUrl || formData.pdfUrl || '',
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      };
-
       if (editingId) {
-        await updateDoc(doc(db, 'warta', editingId), wartaData);
+        await apiService.updateWarta(editingId, formData);
         alert('Warta updated successfully');
       } else {
-        await addDoc(collection(db, 'warta'), wartaData);
+        await apiService.createWarta(formData);
         alert('Warta created successfully');
-
-        if (formData.published) {
-          await sendNotification('Warta Baru', `${formData.tema} - ${formData.ayat}`);
-        }
       }
 
       setFormData({
         tema: '',
         ayat: '',
         renungan: '',
-        mingguLiturgi: '',
-        warnaLiturgi: '',
+        minggu_liturgi: '',
+        warna_liturgi: '',
         published: false,
       });
-      setPdfFile(null);
       setEditingId(null);
       setShowForm(false);
       loadWarta();
@@ -102,32 +72,10 @@ export default function WartaManager() {
     }
   };
 
-  const sendNotification = async (title, body) => {
-    try {
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
-      });
-      
-      await fetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `key=${import.meta.env.VITE_FIREBASE_SERVER_KEY}`
-        },
-        body: JSON.stringify({
-          notification: { title, body },
-          to: '/topics/all'
-        })
-      });
-    } catch (error) {
-      console.error('Error sending notification:', error);
-    }
-  };
-
   const handleDelete = async (id) => {
     if (confirm('Hapus warta ini?')) {
       try {
-        await deleteDoc(doc(db, 'warta', id));
+        await apiService.deleteWarta(id);
         loadWarta();
       } catch (error) {
         console.error('Error deleting warta:', error);
@@ -141,8 +89,8 @@ export default function WartaManager() {
       tema: item.tema,
       ayat: item.ayat,
       renungan: item.renungan,
-      mingguLiturgi: item.mingguLiturgi,
-      warnaLiturgi: item.warnaLiturgi,
+      minggu_liturgi: item.minggu_liturgi,
+      warna_liturgi: item.warna_liturgi,
       published: item.published,
     });
     setEditingId(item.id);
@@ -161,8 +109,8 @@ export default function WartaManager() {
               tema: '',
               ayat: '',
               renungan: '',
-              mingguLiturgi: '',
-              warnaLiturgi: '',
+              minggu_liturgi: '',
+              warna_liturgi: '',
               published: false,
             });
           }}
@@ -217,8 +165,8 @@ export default function WartaManager() {
               <label className="block text-sm font-medium text-navy mb-2">Minggu Liturgi</label>
               <input
                 type="text"
-                name="mingguLiturgi"
-                value={formData.mingguLiturgi}
+                name="minggu_liturgi"
+                value={formData.minggu_liturgi}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
                 placeholder="Contoh: Minggu Paskah VI"
@@ -228,23 +176,13 @@ export default function WartaManager() {
               <label className="block text-sm font-medium text-navy mb-2">Warna Liturgi</label>
               <input
                 type="text"
-                name="warnaLiturgi"
-                value={formData.warnaLiturgi}
+                name="warna_liturgi"
+                value={formData.warna_liturgi}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
                 placeholder="Contoh: Putih"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-navy mb-2">Upload PDF Warta</label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handlePdfChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
-            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -255,7 +193,7 @@ export default function WartaManager() {
               onChange={handleInputChange}
               className="w-4 h-4 text-navy rounded focus:ring-2 focus:ring-navy"
             />
-            <label className="text-sm font-medium text-navy">Publish & Kirim Notifikasi</label>
+            <label className="text-sm font-medium text-navy">Publish</label>
           </div>
 
           <button

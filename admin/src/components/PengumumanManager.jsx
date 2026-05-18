@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { apiService } from '@/apiService';
 
 export default function PengumumanManager() {
   const [pengumuman, setPengumuman] = useState([]);
@@ -10,8 +9,8 @@ export default function PengumumanManager() {
   const [formData, setFormData] = useState({
     judul: '',
     isi: '',
-    tanggalMulai: '',
-    tanggalSelesai: '',
+    tanggal_mulai: '',
+    tanggal_selesai: '',
     kategori: 'umum',
     published: false,
   });
@@ -23,8 +22,8 @@ export default function PengumumanManager() {
   const loadPengumuman = async () => {
     setLoading(true);
     try {
-      const snapshot = await getDocs(collection(db, 'pengumuman'));
-      setPengumuman(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = await apiService.getPengumuman();
+      setPengumuman(data);
     } catch (error) {
       console.error('Error loading pengumuman:', error);
       alert('Error loading pengumuman');
@@ -46,26 +45,19 @@ export default function PengumumanManager() {
     setLoading(true);
 
     try {
-      const pengumumanData = {
-        ...formData,
-        tanggalMulai: Timestamp.fromDate(new Date(formData.tanggalMulai)),
-        tanggalSelesai: Timestamp.fromDate(new Date(formData.tanggalSelesai)),
-        createdAt: Timestamp.now(),
-      };
-
       if (editingId) {
-        await updateDoc(doc(db, 'pengumuman', editingId), pengumumanData);
+        await apiService.updatePengumuman(editingId, formData);
         alert('Pengumuman updated successfully');
       } else {
-        await addDoc(collection(db, 'pengumuman'), pengumumanData);
+        await apiService.createPengumuman(formData);
         alert('Pengumuman created successfully');
       }
 
       setFormData({
         judul: '',
         isi: '',
-        tanggalMulai: '',
-        tanggalSelesai: '',
+        tanggal_mulai: '',
+        tanggal_selesai: '',
         kategori: 'umum',
         published: false,
       });
@@ -83,7 +75,7 @@ export default function PengumumanManager() {
   const handleDelete = async (id) => {
     if (confirm('Hapus pengumuman ini?')) {
       try {
-        await deleteDoc(doc(db, 'pengumuman', id));
+        await apiService.deletePengumuman(id);
         loadPengumuman();
       } catch (error) {
         console.error('Error deleting pengumuman:', error);
@@ -96,8 +88,8 @@ export default function PengumumanManager() {
     setFormData({
       judul: item.judul,
       isi: item.isi,
-      tanggalMulai: item.tanggalMulai?.toDate?.().toISOString().split('T')[0] || '',
-      tanggalSelesai: item.tanggalSelesai?.toDate?.().toISOString().split('T')[0] || '',
+      tanggal_mulai: item.tanggal_mulai || '',
+      tanggal_selesai: item.tanggal_selesai || '',
       kategori: item.kategori,
       published: item.published,
     });
@@ -116,8 +108,8 @@ export default function PengumumanManager() {
             setFormData({
               judul: '',
               isi: '',
-              tanggalMulai: '',
-              tanggalSelesai: '',
+              tanggal_mulai: '',
+              tanggal_selesai: '',
               kategori: 'umum',
               published: false,
             });
@@ -159,8 +151,8 @@ export default function PengumumanManager() {
               <label className="block text-sm font-medium text-navy mb-2">Tanggal Mulai</label>
               <input
                 type="date"
-                name="tanggalMulai"
-                value={formData.tanggalMulai}
+                name="tanggal_mulai"
+                value={formData.tanggal_mulai}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
                 required
@@ -170,8 +162,8 @@ export default function PengumumanManager() {
               <label className="block text-sm font-medium text-navy mb-2">Tanggal Selesai</label>
               <input
                 type="date"
-                name="tanggalSelesai"
-                value={formData.tanggalSelesai}
+                name="tanggal_selesai"
+                value={formData.tanggal_selesai}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy"
                 required
@@ -232,7 +224,7 @@ export default function PengumumanManager() {
             </div>
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.isi}</p>
             <p className="text-xs text-gray-500 mb-3">
-              Berlaku: {item.tanggalMulai?.toDate?.().toLocaleDateString('id-ID')} - {item.tanggalSelesai?.toDate?.().toLocaleDateString('id-ID')}
+              Berlaku: {item.tanggal_mulai} - {item.tanggal_selesai}
             </p>
             <div className="flex gap-2">
               <button

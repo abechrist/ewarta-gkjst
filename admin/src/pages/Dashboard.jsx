@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/supabaseService';
+import { supabase } from '@/firebase';
 import WartaManager from '@/components/WartaManager';
 import JadwalManager from '@/components/JadwalManager';
 import PengumumanManager from '@/components/PengumumanManager';
