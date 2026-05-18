@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/firebase';
+import { apiService } from '@/apiService';
 import WartaManager from '@/components/WartaManager';
 import JadwalManager from '@/components/JadwalManager';
 import PengumumanManager from '@/components/PengumumanManager';
@@ -11,9 +11,13 @@ export default function Dashboard({ user }) {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await apiService.logout();
+      window.location.reload();
     } catch (error) {
       console.error('Logout error:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('userEmail');
+      window.location.reload();
     }
   };
 

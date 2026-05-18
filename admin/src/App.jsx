@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/firebase';
+import { apiService } from '@/apiService';
 import Dashboard from '@/pages/Dashboard';
 import LoginPage from '@/pages/LoginPage';
 
@@ -9,18 +9,15 @@ function App() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
+      const token = localStorage.getItem('token');
+      const userEmail = localStorage.getItem('userEmail');
+      if (token && userEmail) {
+        setUser({ email: userEmail });
+      }
       setLoading(false);
     };
 
     checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription?.unsubscribe();
   }, []);
 
   if (loading) {

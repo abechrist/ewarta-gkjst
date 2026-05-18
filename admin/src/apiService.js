@@ -1,6 +1,26 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ewarta-backend.railway.app'
 
 export const apiService = {
+  async login(email, password) {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+    if (!response.ok) throw new Error('Login failed')
+    return response.json()
+  },
+
+  async logout() {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    })
+    if (!response.ok) throw new Error('Logout failed')
+    localStorage.removeItem('token')
+    return response.json()
+  },
+
   async getWarta() {
     const response = await fetch(`${API_BASE_URL}/api/warta`)
     if (!response.ok) throw new Error('Failed to fetch warta')

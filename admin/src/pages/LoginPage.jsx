@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/firebase';
+import { apiService } from '@/apiService';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -13,12 +13,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      const data = await apiService.login(email, password);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userEmail', email);
+      window.location.reload();
     } catch (err) {
       setError(err.message);
     } finally {
