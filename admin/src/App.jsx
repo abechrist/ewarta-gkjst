@@ -1,4 +1,3 @@
-import '@/index.css';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/firebase';
 import Dashboard from '@/pages/Dashboard';
